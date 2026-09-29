@@ -71,6 +71,9 @@ require('./models/ContactInfo');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// IIS (ARR) reverse proxy arkasında gerçek istemci IP'sini X-Forwarded-For'dan al
+app.set('trust proxy', 1);
+
 // Güvenlik (Helmet) 
 app.use(helmet({
   crossOriginResourcePolicy: false,
