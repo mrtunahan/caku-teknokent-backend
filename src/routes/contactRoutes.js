@@ -1,8 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const Contact = require('../models/Contact');
-const User = require('../models/User'); 
-const nodemailer = require('nodemailer');
+const { createTransporter } = require('../utils/mailer');
+
+const escapeHtml = (value) => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 
 // --- İLETİŞİM FORMU GÖNDERME ---
 router.post('/', async (req, res) => {
@@ -24,29 +30,27 @@ router.post('/', async (req, res) => {
       message: finalMessage
     });
 
-    const adminUser = await User.findOne({ where: { role: 'admin' } });
-
-    if (adminUser && adminUser.email) {
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-        }
-      });
-
-      await transporter.sendMail({
-        from: `"ÇAKÜ Teknokent İletişim" <${process.env.EMAIL_USER}>`,
-        to: adminUser.email, 
-        subject: `Yeni İletişim Mesajı: ${finalName}`,
-        html: `
-          <h3>Yeni Mesaj</h3>
-          <p><strong>İsim:</strong> ${finalName}</p>
-          <p><strong>E-Posta:</strong> ${email}</p>
-          <p><strong>Telefon:</strong> ${finalPhone || '-'}</p>
-          <p><strong>Mesaj:</strong><br>${finalMessage}</p>
-        `
-      });
+    // Mesaj veritabanına kaydedildi; e-posta bildirimi başarısız olsa bile kullanıcıya hata dönme
+    const notifyTo = process.env.CONTACT_EMAIL || process.env.EMAIL_USER;
+    if (notifyTo) {
+      try {
+        const transporter = createTransporter();
+        await transporter.sendMail({
+          from: `"ÇAKÜ Teknokent İletişim" <${process.env.EMAIL_USER}>`,
+          to: notifyTo,
+          replyTo: email || undefined,
+          subject: `Yeni İletişim Mesajı: ${finalName}`,
+          html: `
+            <h3>Yeni Mesaj</h3>
+            <p><strong>İsim:</strong> ${escapeHtml(finalName)}</p>
+            <p><strong>E-Posta:</strong> ${escapeHtml(email || '-')}</p>
+            <p><strong>Telefon:</strong> ${escapeHtml(finalPhone || '-')}</p>
+            <p><strong>Mesaj:</strong><br>${escapeHtml(finalMessage).replace(/\n/g, '<br>')}</p>
+          `
+        });
+      } catch (mailError) {
+        console.error('Contact Mail Error:', mailError.message);
+      }
     }
 
     res.status(201).json({ success: true, message: 'Mesajınız iletildi.' });
