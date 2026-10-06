@@ -1,17 +1,11 @@
-const nodemailer = require('nodemailer');
+const { createTransporter } = require('./mailer');
 
 const sendEmail = async (to, subject, text) => {
   try {
     // 1. Taşıyıcıyı (Transporter) Ayarla
     // NOT: Gmail kullanacaksanız "Uygulama Şifresi" almanız gerekir.
     // Test için 'ethereal' veya kendi SMTP bilgilerinizi girin.
-    const transporter = nodemailer.createTransport({
-      service: 'gmail', // veya 'hotmail', 'yahoo' vs.
-      auth: {
-        user: process.env.EMAIL_USER, // .env dosyasından alacak
-        pass: process.env.EMAIL_PASS  // .env dosyasından alacak
-      }
-    });
+    const transporter = createTransporter();
 
     // 2. Mail Seçenekleri
     const mailOptions = {

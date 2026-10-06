@@ -4,7 +4,7 @@ const router = express.Router();
 const InternshipAd = require('../models/InternshipAd');
 const JobApplication = require('../models/JobApplication');
 const { Op } = require('sequelize');
-const nodemailer = require('nodemailer');
+const { createTransporter } = require('../utils/mailer');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
@@ -185,13 +185,7 @@ router.post('/:id/apply', upload.single('cv'), async (req, res) => {
         }
 
         // 4. Email transporter oluştur
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
+        const transporter = createTransporter();
 
         // 5. İlan türünü belirle
         const ilanTuru = ilan.type === 'İş İlanı' ? 'iş ilanına' : 'staj ilanına';
@@ -301,13 +295,7 @@ router.post('/:ilanId/basvuru', async (req, res) => {
             return res.status(400).json({ success: false, message: 'CV dosyası yüklenmemiş.' });
         }
 
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
+        const transporter = createTransporter();
 
         const cvPath = path.join(__dirname, '../../uploads/cv', application.cv_dosya_yolu);
 
@@ -394,13 +382,7 @@ router.post('/submit-cv', upload.single('cv'), async (req, res) => {
             return res.status(400).json({ success: false, message: 'CV dosyası bulunamadı' });
         }
 
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
+        const transporter = createTransporter();
 
         const mailOptions = {
             from: `"ÇAKÜ Teknokent" <${process.env.EMAIL_USER}>`,

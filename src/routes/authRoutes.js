@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { Op } = require('sequelize');
-const nodemailer = require('nodemailer');
+const { createTransporter } = require('../utils/mailer');
 const User = require('../models/User'); 
 const { protect } = require('../middleware/authMiddleware');
 const rateLimit = require('express-rate-limit');
@@ -101,13 +101,7 @@ router.post('/forgot-password', async (req, res) => {
     user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 dakika
     await user.save();
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER, 
-        pass: process.env.EMAIL_PASS 
-      }
-    });
+    const transporter = createTransporter();
 
     // GÜVENLİK DÜZELTMESİ: URL'i .env dosyasından alıyoruz
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
